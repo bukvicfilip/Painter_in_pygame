@@ -59,8 +59,14 @@ class Menu:
 			pygame.draw.circle(screen, color_pressed, (x+120, y+3), 12)
 		elif pressed[0]==False:
 			pygame.draw.circle(screen, color, (x+120, y+3), 12)
-		pygame.draw.circle(screen, color, (x+145, y+3), 12)
-		pygame.draw.circle(screen, color, (x+170, y+3), 12)
+		if pressed[1]==True:
+			pygame.draw.circle(screen, color_pressed, (x+145, y+3), 12)
+		elif pressed[1]==False:
+			pygame.draw.circle(screen, color, (x+145, y+3), 12)
+		if pressed[2]==True:
+			pygame.draw.circle(screen, color_pressed, (x+170, y+3), 12)
+		elif pressed[2]==False:
+			pygame.draw.circle(screen, color, (x+170, y+3), 12)
 		screen.blit(plus_button, (587, 6))
 		screen.blit(minus_button, (587, 31))
 		screen.blit(letter_r, (707, 9))
@@ -109,6 +115,19 @@ while running:
 	for event in pygame.event.get():
 		if event.type == pygame.QUIT:
 			running = False
+		if event.type == pygame.MOUSEBUTTONDOWN:
+			if 703<x<727 and 5<y<29 and pygame.mouse.get_pressed()[0]==True and pressed[0]==False:
+				pressed[0]=True
+			elif 703<x<727 and 5<y<29 and pygame.mouse.get_pressed()[0]==True and pressed[0]==True:
+				pressed[0]=False
+			if 728<x<752 and 5<y<29 and pygame.mouse.get_pressed()[0]==True and pressed[1]==False:
+				pressed[1]=True
+			elif 728<x<752 and 5<y<29 and pygame.mouse.get_pressed()[0]==True and pressed[1]==True:
+				pressed[1]=False
+			if 753<x<802 and 5<y<29 and pygame.mouse.get_pressed()[0]==True and pressed[2]==False:
+				pressed[2]=True
+			elif 753<x<802 and 5<y<29 and pygame.mouse.get_pressed()[0]==True and pressed[2]==True:
+				pressed[2]=False
 
 	x, y = pygame.mouse.get_pos()
 
@@ -128,22 +147,40 @@ while running:
 				clr=colors[i+12]
 
 		#Adding when you press "+"
-		if 604>x>586 and 23>y>5:
-			if clr[0]<=240:
+		if 604>x>586 and 23>y>5 and pressed[0]==True:
+			if clr[0]<255:
 				clr=(clr[0]+0.1,clr[1],clr[2])
 			else:
 				pass
+		if 604>x>586 and 23>y>5 and pressed[1]==True:
+			if clr[1]<255:
+				clr=(clr[0],clr[1]+0.1,clr[2])
+			else:
+				pass
+		if 604>x>586 and 23>y>5 and pressed[2]==True:
+			if clr[2]<255:
+				clr=(clr[0],clr[1],clr[2]+0.1)
+			else:
+				pass
 		#Subtraction when you press "-"
-		if 604>x>586 and 48>y>30:
-			if clr[0]>=10:
+		if 604>x>586 and 48>y>30 and pressed[0]==True:
+			if clr[0]>0:
 				clr=(clr[0]-0.1,clr[1],clr[2])
 			else:
 				pass
+		if 604>x>586 and 48>y>30 and pressed[1]==True:
+			if clr[1]>0:
+				clr=(clr[0],clr[1]-0.1,clr[2])
+			else:
+				pass
+		if 604>x>586 and 48>y>30 and pressed[2]==True:
+			if clr[2]>0:
+				clr=(clr[0],clr[1],clr[2]-0.1)
+			else:
+				pass
 
-	if 703<x<727 and 5<y<29 and pygame.mouse.get_pressed()[0]==True and pressed[0]==False:
-		pressed[0]=True
-	elif 703<x<727 and 5<y<29 and pygame.mouse.get_pressed()[0]==True and pressed[0]==True:
-		pressed[0]=False
+		if 695>x>660 and 40>y>11:
+			screen.fill((255, 255, 255))
 
 	Menu([227,223, 245], (0, 0, width, 55), clr)
 	Menu.draw_palette(c)
