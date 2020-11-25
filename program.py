@@ -1,4 +1,7 @@
 import pygame
+import numpy
+import random
+from collections import deque
 
 #Initializing the pygame
 pygame.init()
@@ -11,6 +14,9 @@ clr=[255, 255, 255]
 pressed=[False, False, False]
 base_font=pygame.font.Font(None, 15)
 base_font2=pygame.font.Font(None, 11)
+saved_screens=deque()
+fill_button=False
+save_button=False
 
 #Colors from the palette
 colors=[[0, 80, 239],[27, 161, 226], [0, 171, 169],
@@ -35,6 +41,8 @@ class Menu:
 		self.screen=screen
 		self.toolbar = pygame.draw.rect(self.screen, color, position, border_radius=50)
 		self.central = pygame.draw.rect(screen, clr, (x_rect, 5, 40, 30))
+		self.color=(208,202, 230)
+		self.color_pressed=(115, 115, 115)
 
 	#Draws a palette on the toolbar
 	def draw_palette(self, c):
@@ -50,22 +58,20 @@ class Menu:
 	def draw_circle(self, x_pos, y_pos, pressed):
 		x=595
 		y=14
-		color=(208,202, 230)
-		color_pressed=(115, 115, 115)
-		pygame.draw.circle(screen, color, (x, y), 9)
-		pygame.draw.circle(screen, color, (x, y+25), 9)
+		pygame.draw.circle(screen, self.color, (x, y), 9)
+		pygame.draw.circle(screen, self.color, (x, y+25), 9)
 		if pressed[0]==True:
-			pygame.draw.circle(screen, color_pressed, (x+120, y+3), 12)
+			pygame.draw.circle(screen, self.color_pressed, (x+120, y+3), 12)
 		elif pressed[0]==False:
-			pygame.draw.circle(screen, color, (x+120, y+3), 12)
+			pygame.draw.circle(screen, self.color, (x+120, y+3), 12)
 		if pressed[1]==True:
-			pygame.draw.circle(screen, color_pressed, (x+145, y+3), 12)
+			pygame.draw.circle(screen, self.color_pressed, (x+145, y+3), 12)
 		elif pressed[1]==False:
-			pygame.draw.circle(screen, color, (x+145, y+3), 12)
+			pygame.draw.circle(screen, self.color, (x+145, y+3), 12)
 		if pressed[2]==True:
-			pygame.draw.circle(screen, color_pressed, (x+170, y+3), 12)
+			pygame.draw.circle(screen, self.color_pressed, (x+170, y+3), 12)
 		elif pressed[2]==False:
-			pygame.draw.circle(screen, color, (x+170, y+3), 12)
+			pygame.draw.circle(screen, self.color, (x+170, y+3), 12)
 		screen.blit(plus_button, (587, 6))
 		screen.blit(minus_button, (587, 31))
 		screen.blit(letter_r, (707, 9))
@@ -73,10 +79,19 @@ class Menu:
 		screen.blit(letter_g, (757, 9))
 
 	#Draws undo, remove and save button on the toolbar
-	def draw_undo_and_x(self):
+	def draw_undo_and_x(self, fill_color):
 		screen.blit(undo_button, (620, 11))
 		screen.blit(x_button, (660, 11))
+		if fill_color==True:
+			pygame.draw.circle(screen, self.color_pressed, (91, 27), 23)
+		elif fill_color==False:
+			pygame.draw.circle(screen, self.color, (91, 27), 23)
 		screen.blit(save_button, (30, 11))
+		if fill_color==True:
+			pygame.draw.circle(screen, self.color_pressed, (91, 27), 23)
+		elif fill_color==False:
+			pygame.draw.circle(screen, self.color, (91, 27), 23)
+		screen.blit(paint_bucket,(75, 11))
 
 	#Draws text of rgb code
 	def rgb_text(self, text):
@@ -109,6 +124,28 @@ def coordinates(x1, x2, x0, x02, n):
 		x0+=25
 		x02-=25
 
+def fill(surface, position, fill_color):
+    fill_color = surface.map_rgb(fill_color)  # Convert the color to mapped integer value.
+    surf_array = pygame.surfarray.pixels2d(surface)  # Create an array from the surface.
+    current_color = surf_array[position]
+
+    frontier = [position]
+    while len(frontier) > 0:
+        x, y = frontier.pop()
+        try:  # Add a try-except block in case the position is outside the surface.
+            if surf_array[x, y] != current_color:
+                continue
+        except IndexError:
+            continue
+        surf_array[x, y] = fill_color
+        # Then we append the neighbours of the pixel in the current position to our 'frontier' list.
+        frontier.append((x + 1, y))  # Right.
+        frontier.append((x - 1, y))  # Left.
+        frontier.append((x, y + 1))  # Down.
+        frontier.append((x, y - 1))  # Up.
+
+    pygame.surfarray.blit_array(surface, surf_array)
+
 coordinates(x1, x2, x0, x02, n)
 
 #Title, pictures and Icon
@@ -123,15 +160,21 @@ letter_r=pygame.image.load("r.png")
 letter_g=pygame.image.load("b.png")
 letter_b=pygame.image.load("g.png")
 save_button=pygame.image.load("download.png")
+paint_bucket=pygame.image.load("paint-bucket.png")
 
 pygame.mouse.set_cursor(*pygame.cursors.diamond)
 
 running = True
 while running:
+            
 
 	for event in pygame.event.get():
 		if event.type == pygame.QUIT:
 			running = False
+		if event.type == pygame.MOUSEBUTTONUP:
+			surface = pygame.Surface((800, 600))
+			setsurface = surface.copy()
+			saved_screens.append(setsurface)
 		if event.type == pygame.MOUSEBUTTONDOWN:
 			if 703<x<727 and 5<y<29 and pygame.mouse.get_pressed()[0]==True and pressed[0]==False:
 				pressed[0]=True
@@ -148,7 +191,21 @@ while running:
 			if 410>x>380 and 48>y>8:
 				colors.pop(1)
 				colors.append(clr)
-
+			if 652>x>620 and 43>y>11:
+				saved_screens.popleft()
+				saved_screens[0].blit(screen, (0,0))
+			if 102>x>75 and 43>y>11 and fill_button==False:
+				fill_button=True
+			elif 102>x>75 and 43>y>11 and fill_button==True:
+				fill_button=False
+			if event.button == 1 and fill_button==True:
+				fill(screen, event.pos, clr)
+			#Logic when you press "Save" button
+			if 62>x>30 and 43>y>11:
+				rect = pygame.Rect(0, 55, 800, 545)
+				sub = screen.subsurface(rect)
+				pygame.image.save(sub, "screenshot.png")
+				
 	x, y = pygame.mouse.get_pos()
 
 	#Checks when we press right button with mouse
@@ -204,17 +261,11 @@ while running:
 		if 695>x>660 and 40>y>11:
 			screen.fill((255, 255, 255))
 
-		#Logic when you press "Save" button
-		if 62>x>30 and 43>y>11:
-			rect = pygame.Rect(0, 55, 800, 545)
-			sub = screen.subsurface(rect)
-			pygame.image.save(sub, "screenshot.png")
-
 	paint=Menu([227,223, 245], (0, 0, width, 55), clr)
 	paint.tap_to_save()
 	paint.draw_palette(c)
 	paint.draw_circle(x, y, pressed)
-	paint.draw_undo_and_x()
+	paint.draw_undo_and_x(fill_button)
 	paint.rgb_text(clr)
 	pygame.display.update()
 	clock.tick(60)
