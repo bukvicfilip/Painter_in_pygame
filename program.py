@@ -14,9 +14,23 @@ clr=[255, 255, 255]
 pressed=[False, False, False]
 base_font=pygame.font.Font(None, 15)
 base_font2=pygame.font.Font(None, 11)
-saved_screens=deque()
+saved_screens=[]
 fill_button=False
 save_button=False
+plus=False
+minus=False
+######
+width_of_box=23
+color_inactive = pygame.Color('lightskyblue3')
+color_active = pygame.Color('dodgerblue2')
+color_of_box = [color_inactive, color_inactive, color_inactive]
+active = [False, False, False]
+input_box=[]
+n=0
+
+for num in range(3):
+	input_box.append(pygame.Rect(702+n, 32, width_of_box, 13))
+	n+=26
 
 #Colors from the palette
 colors=[[0, 80, 239],[27, 161, 226], [0, 171, 169],
@@ -38,15 +52,25 @@ a=0
 #Toolbar class
 class Menu:
 	def __init__(self, color, position, clr):
+		for cl in clr:
+			#print(cl)
+			if type(cl) is int: 
+				if cl>255:
+					cl=255
+				elif cl=="":
+					cl=0
+		clr=[int(clr[0]), int(clr[1]), int(clr[2])]
+
 		self.screen=screen
 		self.toolbar = pygame.draw.rect(self.screen, color, position, border_radius=50)
 		self.central = pygame.draw.rect(screen, clr, (x_rect, 5, 40, 30))
-		self.color=(208,202, 230)
+		self.color=(190,190, 190)
 		self.color_pressed=(115, 115, 115)
 
 	#Draws a palette on the toolbar
 	def draw_palette(self, c):
 		for n in range(len(x1)):
+			colors[c]=[int(color) for color in colors[c]]
 			pygame.draw.rect(self.screen, colors[c], (x1[n], 5, 20, 20))
 			pygame.draw.rect(self.screen, colors[c+6], (x2[n], 5, 20, 20))
 			pygame.draw.rect(self.screen, colors[c+18], (x1[n], 30, 20, 20))
@@ -55,11 +79,17 @@ class Menu:
 			n+=1
 
 	#Draws buttons on the toolbar
-	def draw_circle(self, x_pos, y_pos, pressed):
+	def draw_circle(self, x_pos, y_pos, pressed, plus, minus):
 		x=595
 		y=14
-		pygame.draw.circle(screen, self.color, (x, y), 9)
-		pygame.draw.circle(screen, self.color, (x, y+25), 9)
+		if plus==False:
+			pygame.draw.circle(screen, self.color, (x, y), 9)
+		elif plus==True:
+			pygame.draw.circle(screen, self.color_pressed, (x, y), 9)	
+		if minus==False:
+			pygame.draw.circle(screen, self.color, (x, y+25), 9)
+		elif minus==True:
+			pygame.draw.circle(screen, self.color_pressed, (x, y+25), 9)
 		if pressed[0]==True:
 			pygame.draw.circle(screen, self.color_pressed, (x+120, y+3), 12)
 		elif pressed[0]==False:
@@ -93,13 +123,17 @@ class Menu:
 			pygame.draw.circle(screen, self.color, (91, 27), 23)
 		screen.blit(paint_bucket,(75, 11))
 
-	#Draws text of rgb code
-	def rgb_text(self, text):
+	def text_rgb(self, text, color_of_box):
 		n=0
-		for num, code in enumerate(text):
-			text_surface=base_font.render(str(round(text[num])), True, (0, 0, 0))
-			screen.blit(text_surface, (707+n, 35))
-			n+=25
+		for box in input_box:
+			txt_surface = base_font.render(str(round(int(text[n]))), True, (0, 0, 0))
+			# Resize the box if the text is too long.
+			input_box[n].w = width_of_box
+			# Blit the text.
+			screen.blit(txt_surface, (input_box[n].x+3, input_box[n].y+3))
+			# Blit the input_box rect.
+			pygame.draw.rect(screen, color_of_box[n], input_box[n], 2)
+			n+=1
 
 	def tap_to_save(self):
 		text_surface2=base_font2.render("CLICK TO SAVE", True, (0, 0, 0))
@@ -115,7 +149,8 @@ screen.fill((255, 255, 255))
 
 #Filling in pixels
 def pixel(surface, pos, color):
-    surface.fill(color, (pos, (5, 5)))
+	color=[int(c) for c in color]
+	surface.fill(color, (pos, (5, 5)))
 
 def coordinates(x1, x2, x0, x02, n):
 	for num in range(6):
@@ -172,9 +207,14 @@ while running:
 		if event.type == pygame.QUIT:
 			running = False
 		if event.type == pygame.MOUSEBUTTONUP:
-			surface = pygame.Surface((800, 600))
-			setsurface = surface.copy()
-			saved_screens.append(setsurface)
+			xcor, ycor=pygame.mouse.get_pos()
+			if 800>xcor>0 and 600>ycor>55:
+				setsurface = screen.copy()
+				saved_screens.append(setsurface)
+			if 604>x>586 and 23>y>5 and plus==True:
+				plus=False
+			if 604>x>586 and 50>y>31 and minus==True:
+				minus=False
 		if event.type == pygame.MOUSEBUTTONDOWN:
 			if 703<x<727 and 5<y<29 and pygame.mouse.get_pressed()[0]==True and pressed[0]==False:
 				pressed[0]=True
@@ -192,19 +232,51 @@ while running:
 				colors.pop(1)
 				colors.append(clr)
 			if 652>x>620 and 43>y>11:
-				saved_screens.popleft()
-				saved_screens[0].blit(screen, (0,0))
+				if len(saved_screens)>1:
+					saved_screens.pop(-1)
+					print(saved_screens)
+					screen.blit(saved_screens[-1], (0, 0))
+				else:
+					print(saved_screens)
+					screen.fill((255, 255, 255))
 			if 102>x>75 and 43>y>11 and fill_button==False:
 				fill_button=True
 			elif 102>x>75 and 43>y>11 and fill_button==True:
 				fill_button=False
 			if event.button == 1 and fill_button==True:
+				clr=[int(c) for c in clr]
 				fill(screen, event.pos, clr)
 			#Logic when you press "Save" button
 			if 62>x>30 and 43>y>11:
 				rect = pygame.Rect(0, 55, 800, 545)
 				sub = screen.subsurface(rect)
 				pygame.image.save(sub, "screenshot.png")
+			if 604>x>586 and 23>y>5 and plus==False:
+				plus=True
+			if 604>x>586 and 50>y>31 and minus==False:
+				minus=True
+
+			for n, box in enumerate(input_box):
+				if box.collidepoint(pygame.mouse.get_pos()):
+					# Toggle the active variable.
+					active[n]=True
+					color_of_box[n]=color_active
+				else:
+					active[n]=False
+					color_of_box[n]=color_inactive
+
+		if event.type == pygame.KEYDOWN:
+			for n, box in enumerate(input_box):
+				if active[n]:
+					if event.key == pygame.K_RETURN:
+						clr[n]=str(clr[n])
+					elif event.key == pygame.K_BACKSPACE:
+						clr[n] = str(clr[n])
+						clr[n]=clr[n][:-1]
+					else:
+						clr[n] = str(clr[n])
+						clr[n] += event.unicode
+
 				
 	x, y = pygame.mouse.get_pos()
 
@@ -264,9 +336,11 @@ while running:
 	paint=Menu([227,223, 245], (0, 0, width, 55), clr)
 	paint.tap_to_save()
 	paint.draw_palette(c)
-	paint.draw_circle(x, y, pressed)
+	paint.draw_circle(x, y, pressed, plus, minus)
 	paint.draw_undo_and_x(fill_button)
-	paint.rgb_text(clr)
+	paint.text_rgb(clr, color_of_box)
 	pygame.display.update()
 	clock.tick(60)
 pygame.quit()
+
+ 
