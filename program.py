@@ -19,6 +19,8 @@ fill_button=False
 save_button=False
 plus=False
 minus=False
+grids=False
+grids1=False
 ######
 width_of_box=23
 color_inactive = pygame.Color('lightskyblue3')
@@ -26,6 +28,7 @@ color_active = pygame.Color('dodgerblue2')
 color_of_box = [color_inactive, color_inactive, color_inactive]
 active = [False, False, False]
 input_box=[]
+thickness=[5, 5]
 n=0
 
 for num in range(3):
@@ -109,7 +112,7 @@ class Menu:
 		screen.blit(letter_g, (757, 9))
 
 	#Draws undo, remove and save button on the toolbar
-	def draw_undo_and_x(self, fill_color):
+	def draw_undo_and_x(self, fill_color, grids, grids1):
 		screen.blit(undo_button, (620, 11))
 		screen.blit(x_button, (660, 11))
 		if fill_color==True:
@@ -122,6 +125,16 @@ class Menu:
 		elif fill_color==False:
 			pygame.draw.circle(screen, self.color, (91, 27), 23)
 		screen.blit(paint_bucket,(75, 11))
+		if grids==True:
+			pygame.draw.circle(screen, self.color_pressed, (144, 27), 23)
+		elif grids==False:
+			pygame.draw.circle(screen, self.color, (144, 27), 23)
+		if grids1==True:
+			pygame.draw.circle(screen, self.color_pressed, (195, 27), 23)
+		elif grids1==False:
+			pygame.draw.circle(screen, self.color, (195, 27), 23)
+		screen.blit(grid_pic, (128, 13))
+		screen.blit(grid1_pic, (179, 13))
 
 	def text_rgb(self, text, color_of_box):
 		n=0
@@ -148,9 +161,12 @@ screen = pygame.display.set_mode((width, height),
 screen.fill((255, 255, 255))
 
 #Filling in pixels
-def pixel(surface, pos, color):
+def pixel(surface, pos, color, thickness):
 	color=[int(c) for c in color]
-	surface.fill(color, (pos, (5, 5)))
+	surface.fill(color, (pos, thickness))
+
+def draw_line(surface, color, start_pos, end_pos, width=1):
+	pygame.draw.line(screen, color, start_pos, end_pos, width)
 
 def coordinates(x1, x2, x0, x02, n):
 	for num in range(6):
@@ -196,6 +212,8 @@ letter_g=pygame.image.load("b.png")
 letter_b=pygame.image.load("g.png")
 save_button=pygame.image.load("download.png")
 paint_bucket=pygame.image.load("paint-bucket.png")
+grid_pic=pygame.image.load("pixels.png")
+grid1_pic=pygame.image.load("pixels1.png")
 
 pygame.mouse.set_cursor(*pygame.cursors.diamond)
 
@@ -215,6 +233,14 @@ while running:
 				plus=False
 			if 604>x>586 and 50>y>31 and minus==True:
 				minus=False
+			if 167>x>121 and 50>y>4 and grids==False:
+				grids=True
+			elif 167>x>121 and 50>y>4 and grids==True:
+				grids=False
+			if 217>x>171 and 50>y>4 and grids1==False:
+				grids1=True
+			elif 217>x>171 and 50>y>4 and grids1==True:
+				grids1=False
 		if event.type == pygame.MOUSEBUTTONDOWN:
 			if 703<x<727 and 5<y<29 and pygame.mouse.get_pressed()[0]==True and pressed[0]==False:
 				pressed[0]=True
@@ -234,11 +260,18 @@ while running:
 			if 652>x>620 and 43>y>11:
 				if len(saved_screens)>1:
 					saved_screens.pop(-1)
-					print(saved_screens)
 					screen.blit(saved_screens[-1], (0, 0))
 				else:
 					print(saved_screens)
 					screen.fill((255, 255, 255))
+			if 167>x>121 and 50>y>4 and grids==False:
+				grids=True
+			elif 167>x>121 and 50>y>4 and grids==True:
+				grids=False
+			if 217>x>171 and 50>y>4 and grids1==False:
+				grids1=True
+			elif 217>x>171 and 50>y>4 and grids1==True:
+				grids1=False
 			if 102>x>75 and 43>y>11 and fill_button==False:
 				fill_button=True
 			elif 102>x>75 and 43>y>11 and fill_button==True:
@@ -276,21 +309,23 @@ while running:
 					else:
 						clr[n] = str(clr[n])
 						clr[n] += event.unicode
-
 				
 	x, y = pygame.mouse.get_pos()
 
 	#Checks when we press right button with mouse
 	if pygame.mouse.get_pressed()[0]:
-		pixel(screen, (x, y), clr)
+		if grids==True:
+			draw_line(screen, clr, (x, y), (x+20,y+20))
+		else:
+			pixel(screen, (x, y), clr, thickness)
 
 		for i in range(len(x1)):
 			if x1[i]+25>x>x1[i] and 8<y<28:
 				clr=colors[i]
-				pixel(screen, (x, y), clr)
+				pixel(screen, (x, y), clr, thickness)
 			if x2[i]+25>x>x2[i] and 8<y<28:
 				clr=colors[i+6]
-				pixel(screen, (x, y), clr)
+				pixel(screen, (x, y), clr, thickness)
 			if x1[i]+25>x>x1[i] and 30<y<50:
 				clr=colors[i+18]
 			if x2[i]+25>x>x2[i] and 30<y<50:
@@ -333,11 +368,22 @@ while running:
 		if 695>x>660 and 40>y>11:
 			screen.fill((255, 255, 255))
 
+		if grids==True:
+			 thickness[0]-=0.2
+			 thickness[1]-=0.2
+			 if thickness[0]<1:
+			 	thickness[0]=1
+			 if thickness[1]<1:
+			 	thickness[1]=1
+		if grids1==True:
+			thickness[0]+=0.2
+			thickness[1]+=0.2
+
 	paint=Menu([227,223, 245], (0, 0, width, 55), clr)
 	paint.tap_to_save()
 	paint.draw_palette(c)
 	paint.draw_circle(x, y, pressed, plus, minus)
-	paint.draw_undo_and_x(fill_button)
+	paint.draw_undo_and_x(fill_button, grids, grids1)
 	paint.text_rgb(clr, color_of_box)
 	pygame.display.update()
 	clock.tick(60)
